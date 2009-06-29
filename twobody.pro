@@ -4,13 +4,9 @@
 TARGET = twobody
 TEMPLATE = app
 SOURCES += main.cpp \
-    mainwindow.cpp \
-    preview.cpp
-HEADERS += mainwindow.h \
-    preview.h
-FORMS += mainwindow.ui \
-    preview.ui
+    mainwindow.cpp
+HEADERS += mainwindow.h
+FORMS += mainwindow.ui
 CONFIG += link_pkgconfig
 PKGCONFIG += libexif
 RESOURCES += twobody.qrc
-

@@ -25,9 +25,92 @@
     <item>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="Preview" name="widget" native="true">
-        <zorder>listView</zorder>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <widget class="QComboBox" name="leftComboBox"/>
+          </item>
+          <item>
+           <widget class="QListView" name="leftListView"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_6">
+          <item>
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="syncButton">
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="twobody.qrc">
+              <normaloff>:/images/sync.png</normaloff>:/images/sync.png</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="addPicturesButton">
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="twobody.qrc">
+              <normaloff>:/images/add.png</normaloff>:/images/add.png</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <widget class="QComboBox" name="rightComboBox"/>
+          </item>
+          <item>
+           <widget class="QListView" name="rightListView"/>
+          </item>
+         </layout>
+        </item>
+       </layout>
       </item>
      </layout>
     </item>
@@ -47,7 +130,7 @@
      <string>&amp;File</string>
     </property>
     <addaction name="action_Add_pictures"/>
-    <addaction name="actionTime_synchronous"/>
+    <addaction name="actionTime_synchronize"/>
     <addaction name="separator"/>
     <addaction name="action_Quit"/>
    </widget>
@@ -84,31 +167,26 @@
      <normaloff>:/images/add.png</normaloff>:/images/add.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Add files ...</string>
+    <string>&amp;Add pictures ...</string>
    </property>
    <property name="toolTip">
     <string>Add pictures</string>
    </property>
   </action>
-  <action name="actionTime_synchronous">
+  <action name="actionTime_synchronize">
    <property name="icon">
     <iconset resource="twobody.qrc">
      <normaloff>:/images/sync.png</normaloff>:/images/sync.png</iconset>
    </property>
    <property name="text">
-    <string>Time synchronous</string>
+    <string>Time synchronize</string>
+   </property>
+   <property name="toolTip">
+    <string>Time synchronize</string>
    </property>
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <customwidgets>
-  <customwidget>
-   <class>Preview</class>
-   <extends>QWidget</extends>
-   <header>preview.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources>
   <include location="twobody.qrc"/>
  </resources>

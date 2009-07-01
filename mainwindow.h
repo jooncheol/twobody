@@ -21,10 +21,12 @@ public:
 private slots:
     void aboutTwobody();
     void addPictures();
+    void slotLeftChanged(int);
+    void slotRightChanged(int);
 
 private:
     Ui::MainWindow *ui;
-    QMap<QString, QStandardItemModel> mModelMap;
+    QMap<QString, QStandardItemModel*> mModelMap;
 
 
 

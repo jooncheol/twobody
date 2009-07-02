@@ -6,9 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>611</width>
+    <width>709</width>
     <height>400</height>
    </rect>
+  </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
   </property>
   <property name="windowTitle">
    <string>Twobody</string>
@@ -32,7 +35,11 @@
            <widget class="QComboBox" name="leftComboBox"/>
           </item>
           <item>
-           <widget class="QListView" name="leftListView"/>
+           <widget class="QListView" name="leftListView">
+            <property name="acceptDrops">
+             <bool>true</bool>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
@@ -106,7 +113,11 @@
            <widget class="QComboBox" name="rightComboBox"/>
           </item>
           <item>
-           <widget class="QListView" name="rightListView"/>
+           <widget class="QListView" name="rightListView">
+            <property name="acceptDrops">
+             <bool>true</bool>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
@@ -121,7 +132,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>611</width>
+     <width>709</width>
      <height>18</height>
     </rect>
    </property>

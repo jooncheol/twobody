@@ -2,6 +2,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDebug>
+#include <QtGui>
 #include "ui_mainwindow.h"
 
 
@@ -24,13 +25,14 @@ MainWindow::MainWindow(QWidget *parent)
         Qt::WindowCloseButtonHint |
         Qt::CustomizeWindowHint);
 
-    ui->leftListView->setIconSize(QSize(160, 160));
-    ui->rightListView->setIconSize(QSize(160, 160));
+    ui->leftListView->setIconSize(QSize(160, 120));
+    ui->rightListView->setIconSize(QSize(160, 120));
 
     connect(ui->actionAbout_Twobody, SIGNAL(activated()), this, SLOT(aboutTwobody()));
     connect(ui->action_Add_pictures, SIGNAL(activated()), this, SLOT(addPictures()));
     connect(ui->addPicturesButton, SIGNAL(clicked()), this, SLOT(addPictures()));
     connect(ui->leftComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(slotLeftChanged(int)));
+    connect(ui->rightComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(slotRightChanged(int)));
 
 }
 
@@ -48,9 +50,12 @@ void MainWindow::aboutTwobody()
 }
 void MainWindow::addPictures()
 {
-
     QStringList filelist =
-        QFileDialog::getOpenFileNames(this, tr("Add pictures"), ".", "Image (*.jpg)");
+        QFileDialog::getOpenFileNames(this, tr("Add pictures"), ".", "Image files (*.jpg)");
+    addPictures(filelist);
+}
+void MainWindow::addPictures(QStringList filelist)
+{
     if(filelist.count()==0)
         return;
 
@@ -58,7 +63,7 @@ void MainWindow::addPictures()
         QString filepath = filelist.at(i);
         QFile f(filepath);
         QFileInfo fi(filepath);
-        if(!fi.exists())
+        if(!fi.exists() || !fi.isFile() || fi.suffix().toLower()!="jpg")
             continue;
 
         printf("file %s\n",  filepath.toLocal8Bit().constData());
@@ -72,38 +77,80 @@ void MainWindow::addPictures()
         QString model(exif_entry_get_value(ee, value, sizeof(value)));
         if(!mModelMap.contains(model)) {  
             mModelMap[model] = new QStandardItemModel();
+            mModelMap[model]->setColumnCount(2);
         }
-        QPixmap pixmap;
-        pixmap.loadFromData((const uchar*)ed->data, ed->size, "jpeg");
-        qDebug() << "pixmap " << pixmap.width() << "x" << pixmap.height() << endl;
+        /*
+        qDebug() << "row count: " << mModelMap[model]->invisibleRootItem()->rowCount();
+        for(int j=0; j<mModelMap[model]->invisibleRootItem()->rowCount(); j++)
+            qDebug() << "j: " << j << " " <<mModelMap[model]->invisibleRootItem()->child(j, 1)->text();
+            */
 
-        QIcon icon(pixmap);
+        if(mModelMap[model]->findItems(filepath, Qt::MatchExactly, 1).count()>0)
+            continue;
 
-        QStandardItem *item = new QStandardItem(icon, fi.completeBaseName()+"<BR>haha\nhoho");
+
         ee = exif_content_get_entry(ed->ifd[EXIF_IFD_0], EXIF_TAG_DATE_TIME);
         exif_entry_get_value(ee, value, sizeof(value));
-        qDebug() << "File: " << fi.completeBaseName() << ", Date time: " << value << endl;
-        item->setData(QVariant(QString(value)));
+        QString datetime(value);
 
-        ee = exif_content_get_entry(ed->ifd[EXIF_IFD_0], EXIF_TAG_X_RESOLUTION);
+        ee = exif_content_get_entry(ed->ifd[EXIF_IFD_0], EXIF_TAG_ORIENTATION);
+        QString orient("top - left");
         if(ee!=NULL) {
             exif_entry_get_value(ee, value, sizeof(value));
-            qDebug() << "X Res: " << value << endl;
+            //qDebug() << "Orientation: " << value << endl;
+            orient = value;
         }
-        ee = exif_content_get_entry(ed->ifd[EXIF_IFD_0], EXIF_TAG_Y_RESOLUTION);
-        if(ee!=NULL) {
-            exif_entry_get_value(ee, value, sizeof(value));
-            qDebug() << "Y Res: " << value << endl;
+
+        QStandardItem *item = new QStandardItem(fi.fileName()+"\n"+datetime);
+        item->setColumnCount(3);
+
+        int rotate;
+        if(orient == "top - left")
+            rotate = 0;
+        else if(orient == "left - bottom")
+            rotate = -90;
+        else if(orient == "right - top")
+            rotate = 90;
+        else
+            rotate = 180;
+        if(rotate==0 || rotate==180) {
+            QPixmap pixmap;
+            pixmap.loadFromData((const uchar*)ed->data, ed->size, "jpeg");
+            if(rotate==0)
+                item->setIcon(pixmap);
+            else {
+                QTransform tf;
+                tf.rotate(180);
+                item->setIcon(pixmap.transformed(tf));
+            }
+        } else {
+            QImage image;
+            image.loadFromData((const uchar*)ed->data, ed->size, "jpeg");
+            QTransform tf = QTransform::fromScale(0.75, 0.75);
+            tf.rotate(rotate);
+            QImage timage = image.transformed(tf);
+            QPixmap pixmap(160, 120);
+            pixmap.fill(Qt::black);
+            QPainter p(&pixmap);
+            p.drawImage(35, 0, timage);
+            item->setIcon(pixmap);
         }
-        exif_data_dump(ed);
+
+        //exif_data_dump(ed);
 
         mModelMap[model]->appendRow(item);
+        int lastrow = mModelMap[model]->rowCount()-1;
+        mModelMap[model]->setItem(lastrow, 1, new QStandardItem (filepath));
+        mModelMap[model]->setItem(lastrow, 2, new QStandardItem (datetime));
 
         exif_data_unref(ed);
     }
 
+
     for(int i=0; i<mModelMap.keys().count(); i++) {
-        ui->leftComboBox->addItem(mModelMap.keys()[i]);
+        mModelMap[mModelMap.keys()[i]]->sort(2);
+        if(ui->leftComboBox->findText(mModelMap.keys()[i])<0)
+            ui->leftComboBox->addItem(mModelMap.keys()[i]);
     }
     if(ui->leftComboBox->count()>0)
         slotLeftChanged(0);
@@ -124,4 +171,26 @@ void MainWindow::slotLeftChanged(int index) {
 }
 void MainWindow::slotRightChanged(int index) {
     ui->rightListView->setModel(mModelMap[ui->rightComboBox->currentText()]);
+}
+
+
+void MainWindow::dragEnterEvent ( QDragEnterEvent * event ) {
+    qDebug() << __FUNCTION__ << endl;
+    qDebug() << event->mimeData()->formats() << endl;
+    if (event->mimeData()->hasFormat("text/uri-list"))
+         event->acceptProposedAction();
+}
+void MainWindow::dropEvent(QDropEvent *event) {
+    qDebug() << __FUNCTION__ << endl;
+    qDebug() << event->mimeData()->text() << endl;
+
+    QStringList fileList;
+    if (event->mimeData()->hasUrls()) {
+        foreach (QUrl url, event->mimeData()->urls()) {
+            fileList << url.toLocalFile();
+            qDebug() << url.toLocalFile() << endl;
+        }
+    }
+    addPictures(fileList);
+    event->acceptProposedAction();
 }

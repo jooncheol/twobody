@@ -54,6 +54,8 @@ void MainWindow::aboutTwobody()
 }
 void MainWindow::clearPictures()
 {
+    disconnect(ui->leftComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(slotLeftChanged(int)));
+    disconnect(ui->rightComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(slotRightChanged(int)));
     ui->leftListView->setModel(NULL);
     ui->rightListView->setModel(NULL);
     ui->leftComboBox->clear();
@@ -66,6 +68,8 @@ void MainWindow::clearPictures()
     qDebug() << "model map clean :" << mModelMap.count() << endl;
     ui->leftComboBox->clear();
     ui->rightComboBox->clear();
+    connect(ui->leftComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(slotLeftChanged(int)));
+    connect(ui->rightComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(slotRightChanged(int)));
 }
 
 void MainWindow::addPictures()

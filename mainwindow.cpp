@@ -63,6 +63,7 @@ void MainWindow::clearPictures()
     for(int i=0; i<mModelMap.keys().count();i++) {
         QString key = mModelMap.keys().at(i);
         mModelMap[key]->clear();
+        delete mModelMap[key];
     }
     mModelMap.clear();
     qDebug() << "model map clean :" << mModelMap.count() << endl;

@@ -27,12 +27,16 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->leftListView->setIconSize(QSize(160, 120));
     ui->rightListView->setIconSize(QSize(160, 120));
+    //ui->logEdit->hide();
 
     connect(ui->actionAbout_Twobody, SIGNAL(activated()), this, SLOT(aboutTwobody()));
     connect(ui->action_Add_pictures, SIGNAL(activated()), this, SLOT(addPictures()));
+    connect(ui->actionClear, SIGNAL(activated()), this, SLOT(clearPictures()));
     connect(ui->addPicturesButton, SIGNAL(clicked()), this, SLOT(addPictures()));
     connect(ui->leftComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(slotLeftChanged(int)));
     connect(ui->rightComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(slotRightChanged(int)));
+
+    statusBar()->showMessage(tr("Ready"));
 
 }
 
@@ -48,6 +52,22 @@ void MainWindow::aboutTwobody()
          tr("The <b>Twobody</b> is time synchronize utility for between two DSLRs."));
 
 }
+void MainWindow::clearPictures()
+{
+    ui->leftListView->setModel(NULL);
+    ui->rightListView->setModel(NULL);
+    ui->leftComboBox->clear();
+    ui->rightComboBox->clear();
+    for(int i=0; i<mModelMap.keys().count();i++) {
+        QString key = mModelMap.keys().at(i);
+        mModelMap[key]->clear();
+    }
+    mModelMap.clear();
+    qDebug() << "model map clean :" << mModelMap.count() << endl;
+    ui->leftComboBox->clear();
+    ui->rightComboBox->clear();
+}
+
 void MainWindow::addPictures()
 {
     QStringList filelist =
@@ -59,6 +79,8 @@ void MainWindow::addPictures(QStringList filelist)
     if(filelist.count()==0)
         return;
 
+    int addedNum = 0;
+    int skippedNum = 0;
     for(int i=0; i<filelist.count(); i++) {
         QString filepath = filelist.at(i);
         QFile f(filepath);
@@ -71,13 +93,17 @@ void MainWindow::addPictures(QStringList filelist)
         ExifEntry *ee = exif_content_get_entry(ed->ifd[EXIF_IFD_0], EXIF_TAG_MODEL);
         if(ee==NULL) {
             exif_data_unref(ed);
+            ++skippedNum;
             continue;
         }
         char value[256]={0,};
-        QString model(exif_entry_get_value(ee, value, sizeof(value)));
+        QString _model(exif_entry_get_value(ee, value, sizeof(value)));
+        QString model = _model.trimmed();
         if(!mModelMap.contains(model)) {  
             mModelMap[model] = new QStandardItemModel();
             mModelMap[model]->setColumnCount(2);
+            qDebug() << "new model: " << model << endl;
+            qDebug() << "model count:" << mModelMap.keys().count() << endl;
         }
         /*
         qDebug() << "row count: " << mModelMap[model]->invisibleRootItem()->rowCount();
@@ -85,8 +111,11 @@ void MainWindow::addPictures(QStringList filelist)
             qDebug() << "j: " << j << " " <<mModelMap[model]->invisibleRootItem()->child(j, 1)->text();
             */
 
-        if(mModelMap[model]->findItems(filepath, Qt::MatchExactly, 1).count()>0)
+        if(mModelMap[model]->findItems(filepath, Qt::MatchExactly, 1).count()>0) {
+            qDebug() << "already existed: " << filepath << endl;
+            ++skippedNum;
             continue;
+        }
 
 
         ee = exif_content_get_entry(ed->ifd[EXIF_IFD_0], EXIF_TAG_DATE_TIME);
@@ -144,17 +173,29 @@ void MainWindow::addPictures(QStringList filelist)
         mModelMap[model]->setItem(lastrow, 2, new QStandardItem (datetime));
 
         exif_data_unref(ed);
+
+        ++addedNum;
     }
 
+    qDebug() << "model count:" << mModelMap.keys().count() << endl;
 
     for(int i=0; i<mModelMap.keys().count(); i++) {
+        qDebug() << "model " << i << ": " <<  mModelMap[mModelMap.keys()[i]]->rowCount() << endl;
         mModelMap[mModelMap.keys()[i]]->sort(2);
         if(ui->leftComboBox->findText(mModelMap.keys()[i])<0)
             ui->leftComboBox->addItem(mModelMap.keys()[i]);
     }
+    qDebug() << "model end" << endl;
     if(ui->leftComboBox->count()>0)
         slotLeftChanged(0);
 
+    QString message;
+    if(skippedNum==0)
+        message = tr("%1 files added").arg(addedNum);
+    else
+        message = tr("%1 files added, %2 files skipped").arg(addedNum).arg(skippedNum);
+    qDebug() << message << endl;
+    this->statusBar()->showMessage(message);
 
 }
 

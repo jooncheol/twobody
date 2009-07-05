@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>709</width>
-    <height>400</height>
+    <height>433</height>
    </rect>
   </property>
   <property name="acceptDrops">
@@ -143,6 +143,8 @@
     <addaction name="action_Add_pictures"/>
     <addaction name="actionTime_synchronize"/>
     <addaction name="separator"/>
+    <addaction name="actionClear"/>
+    <addaction name="separator"/>
     <addaction name="action_Quit"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
@@ -154,6 +156,7 @@
    <addaction name="menu_File"/>
    <addaction name="menu_Help"/>
   </widget>
+  <widget class="QStatusBar" name="statusBar"/>
   <action name="action_Quit">
    <property name="icon">
     <iconset resource="twobody.qrc">
@@ -194,6 +197,15 @@
    </property>
    <property name="toolTip">
     <string>Time synchronize</string>
+   </property>
+  </action>
+  <action name="actionClear">
+   <property name="icon">
+    <iconset resource="twobody.qrc">
+     <normaloff>:/images/clear.png</normaloff>:/images/clear.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clear</string>
    </property>
   </action>
  </widget>

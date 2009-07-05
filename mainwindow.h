@@ -26,6 +26,7 @@ private:
 private slots:
     void aboutTwobody();
     void addPictures();
+    void clearPictures();
     void slotLeftChanged(int);
     void slotRightChanged(int);
 

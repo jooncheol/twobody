@@ -10,4 +10,4 @@ FORMS += mainwindow.ui
 CONFIG += link_pkgconfig
 PKGCONFIG += libexif
 RESOURCES += twobody.qrc
-OTHER_FILES += twobody_ko.ts
+OTHER_FILES += twobody_ko_KR.ts

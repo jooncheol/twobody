@@ -4,8 +4,10 @@
 TARGET = twobody
 TEMPLATE = app
 SOURCES += main.cpp \
-    mainwindow.cpp
-HEADERS += mainwindow.h
+    mainwindow.cpp \
+    picturelistview.cpp
+HEADERS += mainwindow.h \
+    picturelistview.h
 FORMS += mainwindow.ui
 CONFIG += link_pkgconfig
 PKGCONFIG += libexif

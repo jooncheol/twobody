@@ -35,7 +35,7 @@
            <widget class="QComboBox" name="leftComboBox"/>
           </item>
           <item>
-           <widget class="QListView" name="leftListView">
+           <widget class="PictureListView" name="leftListView">
             <property name="acceptDrops">
              <bool>true</bool>
             </property>
@@ -113,7 +113,7 @@
            <widget class="QComboBox" name="rightComboBox"/>
           </item>
           <item>
-           <widget class="QListView" name="rightListView">
+           <widget class="PictureListView" name="rightListView">
             <property name="acceptDrops">
              <bool>true</bool>
             </property>
@@ -210,6 +210,13 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>PictureListView</class>
+   <extends>QListView</extends>
+   <header>picturelistview.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="twobody.qrc"/>
  </resources>

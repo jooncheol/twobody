@@ -35,6 +35,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->addPicturesButton, SIGNAL(clicked()), this, SLOT(addPictures()));
     connect(ui->leftComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(slotLeftChanged(int)));
     connect(ui->rightComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(slotRightChanged(int)));
+    connect(ui->leftListView, SIGNAL(clicked ( const QModelIndex & )), this, SLOT(slotPictureIndexChanged(const QModelIndex &)));
+    connect(ui->rightListView, SIGNAL(clicked ( const QModelIndex & )), this, SLOT(slotPictureIndexChanged(const QModelIndex &)));
+    connect(ui->leftListView, SIGNAL(currentIndexChanged ( const QModelIndex & )), this, SLOT(slotPictureIndexChanged(const QModelIndex &)));
+    connect(ui->rightListView, SIGNAL(currentIndexChanged ( const QModelIndex & )), this, SLOT(slotPictureIndexChanged(const QModelIndex &)));
+
 
     statusBar()->showMessage(tr("Ready"));
 
@@ -137,6 +142,8 @@ void MainWindow::addPictures(QStringList filelist)
 
         QStandardItem *item = new QStandardItem(fi.fileName()+"\n"+datetime);
         item->setColumnCount(3);
+        QDateTime dt = QDateTime::fromString(datetime, "yyyy:MM:dd HH:mm:ss");
+        item->setData(QVariant(dt), Qt::UserRole);
 
         int rotate;
         if(orient == "top - left")
@@ -205,18 +212,55 @@ void MainWindow::addPictures(QStringList filelist)
 }
 
 void MainWindow::slotLeftChanged(int index) {
-    ui->rightComboBox->clear();
-    for(int i=0; i<ui->leftComboBox->count(); i++) {
-        if(i==index)
-            continue;
-        ui->rightComboBox->addItem(ui->leftComboBox->itemText(i));
-    }
-    ui->leftListView->setModel(mModelMap[ui->leftComboBox->currentText()]);
-    if(ui->rightComboBox->count()>0)
-        slotRightChanged(0);
+   ui->rightComboBox->clear();
+   for(int i=0; i<ui->leftComboBox->count(); i++) {
+       if(i==index)
+           continue;
+       ui->rightComboBox->addItem(ui->leftComboBox->itemText(i));
+   }
+
+   QStandardItemModel *model = mModelMap[ui->leftComboBox->currentText()];
+   for(int i=0; i<model->rowCount(); i++) {
+       QStandardItem *item = model->item(i);
+       QStringList l = item->text().split("\n");
+       item->setText(l.at(0)+"\n"+l.at(1));
+   }
+
+   ui->leftListView->setModel(model);
+   if(ui->rightComboBox->count()>0)
+       slotRightChanged(0);
 }
 void MainWindow::slotRightChanged(int index) {
     ui->rightListView->setModel(mModelMap[ui->rightComboBox->currentText()]);
+}
+void MainWindow::slotPictureIndexChanged(const QModelIndex &mi) {
+    if(ui->leftListView->currentIndex().row()>=0 && ui->rightListView->currentIndex().row()>=0) {
+        QStandardItemModel *model = mModelMap[ui->leftComboBox->currentText()];
+        QStandardItem *item = model->item(ui->leftListView->currentIndex().row());
+        QDateTime baseTime = item->data(Qt::UserRole).toDateTime();
+        qDebug() << "Base DT: " << baseTime.toString("yyyy:MM:dd HH:mm:ss") << endl;
+        model = mModelMap[ui->rightComboBox->currentText()];
+        for(int i=0; i<model->rowCount(); i++) {
+            QStandardItem *item = model->item(i);
+            QString fileName = item->text().split("\n").at(0);
+            QDateTime dt = item->data(Qt::UserRole).toDateTime();
+            int secs =  baseTime.secsTo(dt);
+            QString secTo="+ ";
+            if(secs<0)
+                secTo = "- ";
+            secs = abs(secs);
+            int days = secs/86400;
+            int hours = secs/3600;
+            int mins = (secs/60)%60;
+            int sec = secs%60;
+            if(days>0)
+                secTo += tr("%1 day(s), ").arg(days);
+            char interval[32] = {0, };
+            sprintf(interval, "%02d:%02d:%02d", hours, mins, sec);
+            secTo += interval;
+            item->setText(fileName+"\n"+dt.toString("yyyy:MM:dd HH:mm:ss")+"\n"+secTo);
+        }
+    }
 }
 
 

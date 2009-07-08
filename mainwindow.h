@@ -29,6 +29,7 @@ private slots:
     void clearPictures();
     void slotLeftChanged(int);
     void slotRightChanged(int);
+    void slotPictureIndexChanged(const QModelIndex &);
 
 private:
     Ui::MainWindow *ui;

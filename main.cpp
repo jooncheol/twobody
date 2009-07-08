@@ -8,9 +8,8 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     QString locale = QLocale::system().name();
-    qDebug() << "Locale " << locale << endl;
     QTranslator translator;
-    translator.load(QString("twobody_") + locale);
+    translator.load(QString("twobody_%1").arg(locale));
     a.installTranslator(&translator);
     MainWindow w;
     w.show();

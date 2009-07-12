@@ -5,6 +5,8 @@
 #include <QMap>
 #include <QStandardItemModel>
 #include <QWidget>
+#include <QProgressDialog>
+#include <QTimer>
 
 namespace Ui
 {
@@ -30,10 +32,16 @@ private slots:
     void slotLeftChanged(int);
     void slotRightChanged(int);
     void slotPictureIndexChanged(const QModelIndex &);
+    void slotSync();
+    void slotSyncTimer();
+    void slotSyncCanceled();
 
 private:
     Ui::MainWindow *ui;
     QMap<QString, QStandardItemModel*> mModelMap;
+    QProgressDialog *mPD;
+    QTimer          *mTimer;
+    int mProgress ;
 
  protected:
      void dragEnterEvent(QDragEnterEvent *event);

@@ -5,9 +5,11 @@ TARGET = twobody
 TEMPLATE = app
 SOURCES += main.cpp \
     mainwindow.cpp \
-    picturelistview.cpp
+    picturelistview.cpp \
+    thumbdelegate.cpp
 HEADERS += mainwindow.h \
-    picturelistview.h
+    picturelistview.h \
+    thumbdelegate.h
 FORMS += mainwindow.ui
 CONFIG += link_pkgconfig
 PKGCONFIG += libexif

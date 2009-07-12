@@ -2,8 +2,11 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDebug>
+#include <QMap>
 #include <QtGui>
+#include <Qtimer>
 #include "ui_mainwindow.h"
+#include "thumbdelegate.h"
 
 
 #include <libexif/exif-data.h>
@@ -18,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
 #ifndef Q_WS_MAC
     //menuBar()->hide();
 #endif
+    mTimer = new QTimer(this);
 
     setWindowFlags(
         Qt::Window | Qt::WindowTitleHint |
@@ -29,16 +33,22 @@ MainWindow::MainWindow(QWidget *parent)
     ui->rightListView->setIconSize(QSize(160, 120));
     //ui->logEdit->hide();
 
+    connect(mTimer, SIGNAL(timeout()), this, SLOT(slotSyncTimer()));
     connect(ui->actionAbout_Twobody, SIGNAL(activated()), this, SLOT(aboutTwobody()));
     connect(ui->action_Add_pictures, SIGNAL(activated()), this, SLOT(addPictures()));
     connect(ui->actionClear, SIGNAL(activated()), this, SLOT(clearPictures()));
     connect(ui->addPicturesButton, SIGNAL(clicked()), this, SLOT(addPictures()));
+    connect(ui->syncButton, SIGNAL(clicked()), this, SLOT(slotSync()));
     connect(ui->leftComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(slotLeftChanged(int)));
     connect(ui->rightComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(slotRightChanged(int)));
     connect(ui->leftListView, SIGNAL(clicked ( const QModelIndex & )), this, SLOT(slotPictureIndexChanged(const QModelIndex &)));
     connect(ui->rightListView, SIGNAL(clicked ( const QModelIndex & )), this, SLOT(slotPictureIndexChanged(const QModelIndex &)));
     connect(ui->leftListView, SIGNAL(currentIndexChanged ( const QModelIndex & )), this, SLOT(slotPictureIndexChanged(const QModelIndex &)));
     connect(ui->rightListView, SIGNAL(currentIndexChanged ( const QModelIndex & )), this, SLOT(slotPictureIndexChanged(const QModelIndex &)));
+    ui->leftListView->setItemDelegate(new ThumbDelegate());
+    ThumbDelegate *d = new ThumbDelegate();
+    d->setRight();
+    ui->rightListView->setItemDelegate(d);
 
 
     statusBar()->showMessage(tr("Ready"));
@@ -54,7 +64,8 @@ MainWindow::~MainWindow()
 void MainWindow::aboutTwobody()
 {
     QMessageBox::about(this, tr("About Twobody"),
-         tr("The <b>Twobody</b> is time synchronize utility for between two DSLRs."));
+         tr("The <b>Twobody</b> is time synchronize utility for between two DSLRs.")+"<br/><br/>"+
+         tr("Copyright (C) 2009 Jooncheol Park All rights reserved"));
 
 }
 void MainWindow::clearPictures()
@@ -65,7 +76,9 @@ void MainWindow::clearPictures()
     ui->rightListView->setModel(NULL);
     ui->leftComboBox->clear();
     ui->rightComboBox->clear();
-    for(int i=0; i<mModelMap.keys().count();i++) {
+    qDebug() << "model map clean :" << mModelMap.count() << endl;
+    for(int i=(mModelMap.keys().count()-1); i>=0;i--) {
+        qDebug() << "clear " << i << endl;
         QString key = mModelMap.keys().at(i);
         mModelMap[key]->clear();
         delete mModelMap[key];
@@ -81,13 +94,22 @@ void MainWindow::clearPictures()
 void MainWindow::addPictures()
 {
     QStringList filelist =
-        QFileDialog::getOpenFileNames(this, tr("Add pictures"), ".", "Image files (*.jpg)");
+        QFileDialog::getOpenFileNames(this, tr("Add pictures"), ".", tr("Image files ")
+#ifdef Q_WS_WIN
+                +"(*.jpg)"
+#else
+                +"(*.jpg *.JPG)"
+#endif
+                );
     addPictures(filelist);
 }
 void MainWindow::addPictures(QStringList filelist)
 {
-    if(filelist.count()==0)
+    setCursor(Qt::WaitCursor);
+    if(filelist.count()==0) {
+        setCursor(QCursor());
         return;
+    }
 
     int addedNum = 0;
     int skippedNum = 0;
@@ -111,7 +133,7 @@ void MainWindow::addPictures(QStringList filelist)
         QString model = _model.trimmed();
         if(!mModelMap.contains(model)) {  
             mModelMap[model] = new QStandardItemModel();
-            mModelMap[model]->setColumnCount(2);
+            mModelMap[model]->setColumnCount(1);
             qDebug() << "new model: " << model << endl;
             qDebug() << "model count:" << mModelMap.keys().count() << endl;
         }
@@ -128,6 +150,7 @@ void MainWindow::addPictures(QStringList filelist)
         }
 
 
+        memset(value, 0, sizeof(value));
         ee = exif_content_get_entry(ed->ifd[EXIF_IFD_0], EXIF_TAG_DATE_TIME);
         exif_entry_get_value(ee, value, sizeof(value));
         QString datetime(value);
@@ -135,15 +158,20 @@ void MainWindow::addPictures(QStringList filelist)
         ee = exif_content_get_entry(ed->ifd[EXIF_IFD_0], EXIF_TAG_ORIENTATION);
         QString orient("top - left");
         if(ee!=NULL) {
+            memset(value, 0, sizeof(value));
             exif_entry_get_value(ee, value, sizeof(value));
             //qDebug() << "Orientation: " << value << endl;
             orient = value;
         }
 
-        QStandardItem *item = new QStandardItem(fi.fileName()+"\n"+datetime);
+        QStandardItem *item = new QStandardItem(fi.fileName());
         item->setColumnCount(3);
         QDateTime dt = QDateTime::fromString(datetime, "yyyy:MM:dd HH:mm:ss");
-        item->setData(QVariant(dt), Qt::UserRole);
+        QMap<QString, QVariant> userData;
+        userData["date time"] = QVariant(dt);
+        userData["file path"] = QVariant(filepath);
+        item->setData(QVariant(userData), Qt::UserRole);
+
 
         int rotate;
         if(orient == "top - left")
@@ -181,8 +209,7 @@ void MainWindow::addPictures(QStringList filelist)
 
         mModelMap[model]->appendRow(item);
         int lastrow = mModelMap[model]->rowCount()-1;
-        mModelMap[model]->setItem(lastrow, 1, new QStandardItem (filepath));
-        mModelMap[model]->setItem(lastrow, 2, new QStandardItem (datetime));
+        mModelMap[model]->setItem(lastrow, 1, new QStandardItem (datetime));
 
         exif_data_unref(ed);
 
@@ -193,13 +220,15 @@ void MainWindow::addPictures(QStringList filelist)
 
     for(int i=0; i<mModelMap.keys().count(); i++) {
         qDebug() << "model " << i << ": " <<  mModelMap[mModelMap.keys()[i]]->rowCount() << endl;
-        mModelMap[mModelMap.keys()[i]]->sort(2);
+        mModelMap[mModelMap.keys()[i]]->sort(1);
         if(ui->leftComboBox->findText(mModelMap.keys()[i])<0)
             ui->leftComboBox->addItem(mModelMap.keys()[i]);
     }
     qDebug() << "model end" << endl;
+    qDebug() << "1 model count:" << mModelMap.keys().count() << endl;
     if(ui->leftComboBox->count()>0)
         slotLeftChanged(0);
+    qDebug() << "2 model count:" << mModelMap.keys().count() << endl;
 
     QString message;
     if(skippedNum==0)
@@ -207,8 +236,10 @@ void MainWindow::addPictures(QStringList filelist)
     else
         message = tr("%1 files added, %2 files skipped").arg(addedNum).arg(skippedNum);
     qDebug() << message << endl;
+    qDebug() << "model count:" << mModelMap.keys().count() << endl;
     this->statusBar()->showMessage(message);
-
+    
+    setCursor(QCursor());
 }
 
 void MainWindow::slotLeftChanged(int index) {
@@ -220,47 +251,71 @@ void MainWindow::slotLeftChanged(int index) {
    }
 
    QStandardItemModel *model = mModelMap[ui->leftComboBox->currentText()];
-   for(int i=0; i<model->rowCount(); i++) {
-       QStandardItem *item = model->item(i);
-       QStringList l = item->text().split("\n");
-       item->setText(l.at(0)+"\n"+l.at(1));
-   }
 
    ui->leftListView->setModel(model);
    if(ui->rightComboBox->count()>0)
        slotRightChanged(0);
+
+    ui->syncButton->setEnabled(
+        ui->leftListView->currentIndex().row()>=0 && ui->rightListView->currentIndex().row()>=0);
 }
 void MainWindow::slotRightChanged(int index) {
-    ui->rightListView->setModel(mModelMap[ui->rightComboBox->currentText()]);
+    if(index>=0)
+        ui->rightListView->setModel(mModelMap[ui->rightComboBox->currentText()]);
+    ui->syncButton->setEnabled(
+        ui->leftListView->currentIndex().row()>=0 && ui->rightListView->currentIndex().row()>=0);
 }
 void MainWindow::slotPictureIndexChanged(const QModelIndex &mi) {
     if(ui->leftListView->currentIndex().row()>=0 && ui->rightListView->currentIndex().row()>=0) {
+        ui->syncButton->setEnabled(true);
         QStandardItemModel *model = mModelMap[ui->leftComboBox->currentText()];
         QStandardItem *item = model->item(ui->leftListView->currentIndex().row());
-        QDateTime baseTime = item->data(Qt::UserRole).toDateTime();
+        QMap<QString, QVariant> userData = item->data(Qt::UserRole).toMap();
+        QDateTime baseTime = userData["date time"].toDateTime();
         qDebug() << "Base DT: " << baseTime.toString("yyyy:MM:dd HH:mm:ss") << endl;
+
         model = mModelMap[ui->rightComboBox->currentText()];
+        QStandardItem *ritem = model->item(ui->rightListView->currentIndex().row());
+        QMap<QString, QVariant> rUserData = ritem->data(Qt::UserRole).toMap();
+        QDateTime dt = rUserData["date time"].toDateTime();
+        int delta =  dt.secsTo(baseTime);
+
         for(int i=0; i<model->rowCount(); i++) {
             QStandardItem *item = model->item(i);
-            QString fileName = item->text().split("\n").at(0);
-            QDateTime dt = item->data(Qt::UserRole).toDateTime();
-            int secs =  baseTime.secsTo(dt);
-            QString secTo="+ ";
+            QMap<QString, QVariant> userData = item->data(Qt::UserRole).toMap();
+            QDateTime dt = userData["date time"].toDateTime();
+            QDateTime deltaDateTime =  dt.addSecs(delta);
+            userData["after"] = QVariant(deltaDateTime.toString("yyyy:MM:dd HH:mm:ss"));
+            int secs =  dt.secsTo(deltaDateTime);
+            QString secTo="+";
             if(secs<0)
-                secTo = "- ";
+                secTo = "-";
             secs = abs(secs);
-            int days = secs/86400;
-            int hours = secs/3600;
-            int mins = (secs/60)%60;
-            int sec = secs%60;
-            if(days>0)
-                secTo += tr("%1 day(s), ").arg(days);
+            if(secs>(86400*365)) {
+                secTo += " "+tr("%1 year").arg(secs/(86400*365));
+                secs = secs%(86400*365);
+            }
+            if(secs>(86400*30)) {
+                secTo += " "+tr("%1 month").arg(secs/(86400*30));
+                secs = secs%(86400*30);
+            }
+            if(secs>86400) {
+                secTo += " "+tr("%1 day").arg(secs/(86400));
+                secs = secs%(86400);
+            }
+            int hour, min;
+            hour = secs/3600;
+            secs = secs%(3600);
+            min = secs/60;
+            secs = secs%(60);
             char interval[32] = {0, };
-            sprintf(interval, "%02d:%02d:%02d", hours, mins, sec);
+            sprintf(interval, " %02d:%02d:%02d", hour, min, secs);
             secTo += interval;
-            item->setText(fileName+"\n"+dt.toString("yyyy:MM:dd HH:mm:ss")+"\n"+secTo);
+            userData["delta"] = QVariant(secTo);
+            item->setData(QVariant(userData), Qt::UserRole);
         }
-    }
+    } else
+        ui->syncButton->setEnabled(false);
 }
 
 
@@ -283,4 +338,39 @@ void MainWindow::dropEvent(QDropEvent *event) {
     }
     addPictures(fileList);
     event->acceptProposedAction();
+}
+
+
+void MainWindow::slotSync() {
+    QStandardItemModel *model = mModelMap[ui->rightComboBox->currentText()];
+    mPD = new QProgressDialog(this);
+    connect(mPD, SIGNAL(canceled()), this, SLOT(slotSyncCanceled()));
+    mPD->setMaximum(model->rowCount()-1);
+    mPD->setModal(true);
+    mPD->show();
+    mProgress = 0;
+    mTimer->start(100);
+}
+void MainWindow::slotSyncCanceled() {
+    mTimer->stop();
+    if(mPD!=NULL) {
+        mPD->close();
+        mPD = NULL;
+    }
+}
+void MainWindow::slotSyncTimer() {
+    QStandardItemModel *model = mModelMap[ui->rightComboBox->currentText()];
+    QStandardItem *item = model->item(mProgress);
+    QMap<QString, QVariant> userData = item->data(Qt::UserRole).toMap();
+    QString filePath = userData["file path"].toString();
+    qDebug() << "modify " << filePath ;
+    mPD->setLabelText(filePath);
+    mPD->setValue(mProgress++);
+    if(mProgress<model->rowCount())
+        mTimer->start(100);
+    else {
+        mPD->close();
+        delete mPD;
+        mPD = NULL;
+   }
 }

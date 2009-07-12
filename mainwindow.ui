@@ -63,6 +63,9 @@
             <property name="enabled">
              <bool>false</bool>
             </property>
+            <property name="toolTip">
+             <string>Synchronize</string>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -93,6 +96,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="addPicturesButton">
+            <property name="toolTip">
+             <string>Add pictures</string>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -191,6 +197,9 @@
    </property>
   </action>
   <action name="actionTime_synchronize">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="twobody.qrc">
      <normaloff>:/images/sync.png</normaloff>:/images/sync.png</iconset>

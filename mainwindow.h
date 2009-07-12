@@ -7,6 +7,7 @@
 #include <QWidget>
 #include <QProgressDialog>
 #include <QTimer>
+#include "common.h"
 
 namespace Ui
 {

@@ -33,6 +33,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->rightListView->setIconSize(QSize(160, 120));
     //ui->logEdit->hide();
 
+    setWindowTitle(tr(TITLE)+" "+VERSION);
+
     connect(mTimer, SIGNAL(timeout()), this, SLOT(slotSyncTimer()));
     connect(ui->actionAbout_Twobody, SIGNAL(activated()), this, SLOT(aboutTwobody()));
     connect(ui->action_Add_pictures, SIGNAL(activated()), this, SLOT(addPictures()));
@@ -63,8 +65,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::aboutTwobody()
 {
-    QMessageBox::about(this, tr("About Twobody"),
+    QMessageBox::about(this, tr("About %1 %2").arg(qApp->applicationName()).arg(qApp->applicationVersion()),
          tr("The <b>Twobody</b> is time synchronize utility for between two DSLRs.")+"<br/><br/>"+
+         tr("Version:")+" " + qApp->applicationVersion()+ "<br/>"+
+         tr("Homepage:")+" " HOMEPAGE "<br/><br/>"+
          tr("Copyright (C) 2009 Jooncheol Park All rights reserved"));
 
 }
@@ -258,16 +262,21 @@ void MainWindow::slotLeftChanged(int index) {
 
     ui->syncButton->setEnabled(
         ui->leftListView->currentIndex().row()>=0 && ui->rightListView->currentIndex().row()>=0);
+    ui->actionTime_synchronize->setEnabled(
+        ui->leftListView->currentIndex().row()>=0 && ui->rightListView->currentIndex().row()>=0);
 }
 void MainWindow::slotRightChanged(int index) {
     if(index>=0)
         ui->rightListView->setModel(mModelMap[ui->rightComboBox->currentText()]);
     ui->syncButton->setEnabled(
         ui->leftListView->currentIndex().row()>=0 && ui->rightListView->currentIndex().row()>=0);
+    ui->actionTime_synchronize->setEnabled(
+        ui->leftListView->currentIndex().row()>=0 && ui->rightListView->currentIndex().row()>=0);
 }
 void MainWindow::slotPictureIndexChanged(const QModelIndex &mi) {
     if(ui->leftListView->currentIndex().row()>=0 && ui->rightListView->currentIndex().row()>=0) {
         ui->syncButton->setEnabled(true);
+        ui->actionTime_synchronize->setEnabled(true);
         QStandardItemModel *model = mModelMap[ui->leftComboBox->currentText()];
         QStandardItem *item = model->item(ui->leftListView->currentIndex().row());
         QMap<QString, QVariant> userData = item->data(Qt::UserRole).toMap();
@@ -314,8 +323,10 @@ void MainWindow::slotPictureIndexChanged(const QModelIndex &mi) {
             userData["delta"] = QVariant(secTo);
             item->setData(QVariant(userData), Qt::UserRole);
         }
-    } else
+    } else {
         ui->syncButton->setEnabled(false);
+        ui->actionTime_synchronize->setEnabled(false);
+   }
 }
 
 
@@ -346,8 +357,8 @@ void MainWindow::slotSync() {
     mPD = new QProgressDialog(this);
     connect(mPD, SIGNAL(canceled()), this, SLOT(slotSyncCanceled()));
     mPD->setMaximum(model->rowCount()-1);
+    mPD->setWindowTitle(tr("Synchronize"));
     mPD->setModal(true);
-    mPD->show();
     mProgress = 0;
     mTimer->start(100);
 }
@@ -363,8 +374,8 @@ void MainWindow::slotSyncTimer() {
     QStandardItem *item = model->item(mProgress);
     QMap<QString, QVariant> userData = item->data(Qt::UserRole).toMap();
     QString filePath = userData["file path"].toString();
-    qDebug() << "modify " << filePath ;
     mPD->setLabelText(filePath);
+    mPD->show();
     mPD->setValue(mProgress++);
     if(mProgress<model->rowCount())
         mTimer->start(100);

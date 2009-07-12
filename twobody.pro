@@ -9,7 +9,8 @@ SOURCES += main.cpp \
     thumbdelegate.cpp
 HEADERS += mainwindow.h \
     picturelistview.h \
-    thumbdelegate.h
+    thumbdelegate.h \
+    common.h
 FORMS += mainwindow.ui
 CONFIG += link_pkgconfig
 PKGCONFIG += libexif

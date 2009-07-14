@@ -613,6 +613,7 @@ void MainWindow::slotSyncTimer() {
     QMap<QString, QVariant> userData = item->data(Qt::UserRole).toMap();
     QString filePath = userData["file path"].toString();
 
+/*
     ExifData *ed = exif_data_new_from_file (filePath.toLocal8Bit().constData());
     ExifEntry *ee = exif_content_get_entry(ed->ifd[EXIF_IFD_0], EXIF_TAG_DATE_TIME);
     sprintf((char*)ee->data, "%s", userData["after"].toString().toUtf8().constData());
@@ -628,13 +629,28 @@ void MainWindow::slotSyncTimer() {
     if(ee)
         sprintf((char*)ee->data, "%s", userData["after"].toString().toUtf8().constData());
     ee = NULL;
+    */
+    QFile f(filePath);
+    f.open(QIODevice::ReadOnly);
+    QByteArray bin = f.readAll();
+    f.close();
+    QString datestr = userData["date time"].toDateTime().toString("yyyy:MM:dd HH:mm:ss");
+    QString after = userData["after"].toString();
+    QByteArray bin2 = bin.replace(datestr, after.toAscii().constData());
+
+    QFile f2(filePath);
+    f2.open(QIODevice::WriteOnly);
+    f2.write(bin2);
+    f2.close();
 
 
-    userData["date time"] = QVariant(userData["after"].toString());
-    userData["after"] = QVariant(userData["date time"].toString());
+
+    userData["date time"] = QVariant(QDateTime::fromString(userData["after"].toString(), "yyyy:MM:dd HH:mm:ss"));
+    userData["after"] = QVariant(userData["date time"].toDateTime().toString("yyyy:MM:dd HH:mm:ss"));
     userData["delta"] = QVariant("+ 00:00:00");
     item->setData(userData, Qt::UserRole);
 
+/*
     uint8_t *exif_buf = NULL;
     uint32_t exif_buf_len = 0;
     exif_data_save_data (ed, &exif_buf, &exif_buf_len);
@@ -652,6 +668,7 @@ void MainWindow::slotSyncTimer() {
 
     free(exif_buf);
     exif_data_unref(ed);
+    */
 
     mPD->setLabelText(filePath);
     mPD->show();

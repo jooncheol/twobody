@@ -16,3 +16,5 @@ CONFIG += link_pkgconfig
 PKGCONFIG += libexif
 RESOURCES += twobody.qrc
 OTHER_FILES += twobody_ko_KR.ts
+
+LIBS += c:\MinGW\lib\libjpeg.dll.a

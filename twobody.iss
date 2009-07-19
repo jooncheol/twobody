@@ -29,6 +29,7 @@ Source: "release\libexif-12.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Qt\2009.02\qt\bin\QtCore4.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Qt\2009.02\qt\bin\QtGui4.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "twobody_ko_KR.qm"; DestDir: "{app}"; Flags: ignoreversion
+Source: "COPYING"; DestDir: "{app}"; Flags: ignoreversion
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

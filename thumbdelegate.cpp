@@ -1,6 +1,7 @@
 #include "thumbdelegate.h"
 #include <QPainter>
 #include <QDebug>
+#include <QDateTime>
 
 static bool fontInitialized = false;
 static QFont deltaFont;
@@ -37,7 +38,7 @@ void ThumbDelegate::paint ( QPainter * painter, const QStyleOptionViewItem & opt
     QMap<QString, QVariant> userData = index.model()->data(index, Qt::UserRole).toMap();
     painter->drawText(option.rect.x()+170, option.rect.y()+20,
             index.model()->data(index, Qt::DisplayRole).toString());
-    painter->drawText(option.rect.x()+170, option.rect.y()+40, userData["date time"].toString());
+    painter->drawText(option.rect.x()+170, option.rect.y()+40, userData["date time"].toDateTime().toString("yyyy:MM:dd HH:mm:ss"));
 
     if(mRight && userData.contains("after")) {
         QFont f = painter->font();

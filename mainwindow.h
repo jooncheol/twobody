@@ -36,13 +36,18 @@ private slots:
     void slotSync();
     void slotSyncTimer();
     void slotSyncCanceled();
+    void slotAddTimer();
 
 private:
     Ui::MainWindow *ui;
     QMap<QString, QStandardItemModel*> mModelMap;
     QProgressDialog *mPD;
     QTimer          *mTimer;
-    int mProgress ;
+    int             mProgress ;
+    QTimer          *mAddTimer;
+    int             mAddedNum ;
+    int             mSkippedNum ;
+    QStringList         mFileList;
 
  protected:
      void dragEnterEvent(QDragEnterEvent *event);

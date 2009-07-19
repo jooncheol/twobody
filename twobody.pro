@@ -12,9 +12,8 @@ HEADERS += mainwindow.h \
     thumbdelegate.h \
     common.h
 FORMS += mainwindow.ui
-CONFIG += link_pkgconfig
+CONFIG += link_pkgconfig release static
 PKGCONFIG += libexif
 RESOURCES += twobody.qrc
 OTHER_FILES += twobody_ko_KR.ts
-
-LIBS += c:\MinGW\lib\libjpeg.dll.a
+RC_FILE = twobody.rc

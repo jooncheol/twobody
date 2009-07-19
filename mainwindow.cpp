@@ -7,10 +7,6 @@
 #include <Qtimer>
 #include "ui_mainwindow.h"
 #include "thumbdelegate.h"
-extern "C" {
-#include "jpeglib.h"
-#include <setjmp.h>
-}
 
 
 #include <libexif/exif-data.h>
@@ -26,6 +22,9 @@ MainWindow::MainWindow(QWidget *parent)
     //menuBar()->hide();
 #endif
     mTimer = new QTimer(this);
+    mTimer->setSingleShot(true);
+    mAddTimer = new QTimer(this);
+    mAddTimer->setSingleShot(true);
 
     setWindowFlags(
         Qt::Window | Qt::WindowTitleHint |
@@ -40,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle(tr(TITLE)+" "+VERSION);
 
     connect(mTimer, SIGNAL(timeout()), this, SLOT(slotSyncTimer()));
+    connect(mAddTimer, SIGNAL(timeout()), this, SLOT(slotAddTimer()));
     connect(ui->actionAbout_Twobody, SIGNAL(activated()), this, SLOT(aboutTwobody()));
     connect(ui->action_Add_pictures, SIGNAL(activated()), this, SLOT(addPictures()));
     connect(ui->actionClear, SIGNAL(activated()), this, SLOT(clearPictures()));
@@ -113,18 +113,36 @@ void MainWindow::addPictures()
 }
 void MainWindow::addPictures(QStringList filelist)
 {
-    setCursor(Qt::WaitCursor);
     if(filelist.count()==0) {
-        setCursor(QCursor());
         return;
     }
+    setCursor(Qt::WaitCursor);
 
-    int addedNum = 0;
-    int skippedNum = 0;
-    for(int i=0; i<filelist.count(); i++) {
-        QString filepath = filelist.at(i);
+    mPD = new QProgressDialog(this);
+    mPD->setMaximum(filelist.count());
+    mPD->setCancelButton(NULL);
+    mPD->setWindowFlags( Qt::Dialog | Qt::WindowTitleHint | Qt::CustomizeWindowHint );
+    mPD->setWindowTitle(tr("Adding"));
+    mPD->setModal(true);
+    mFileList = filelist;
+    mAddedNum = 0;
+    mSkippedNum = 0;
+    mProgress = 0;
+    mAddTimer->start(10);
+}
+
+
+void MainWindow::slotAddTimer() {
+    int progress = mProgress;
+    for(int i=mProgress; i==progress; i++) {
+        QString filepath = mFileList.at(i);
         QFile f(filepath);
         QFileInfo fi(filepath);
+
+        mPD->setLabelText(filepath);
+        mPD->show();
+        mPD->setValue(++mProgress);
+
         if(!fi.exists() || !fi.isFile() || fi.suffix().toLower()!="jpg")
             continue;
 
@@ -133,9 +151,10 @@ void MainWindow::addPictures(QStringList filelist)
         ExifEntry *ee = exif_content_get_entry(ed->ifd[EXIF_IFD_0], EXIF_TAG_MODEL);
         if(ee==NULL) {
             exif_data_unref(ed);
-            ++skippedNum;
+            ++mSkippedNum;
             continue;
         }
+
         char value[256]={0,};
         QString _model(exif_entry_get_value(ee, value, sizeof(value)));
         QString model = _model.trimmed();
@@ -151,9 +170,9 @@ void MainWindow::addPictures(QStringList filelist)
             qDebug() << "j: " << j << " " <<mModelMap[model]->invisibleRootItem()->child(j, 1)->text();
             */
 
-        if(mModelMap[model]->findItems(filepath, Qt::MatchExactly, 1).count()>0) {
+        if(mModelMap[model]->findItems(filepath, Qt::MatchExactly, 2).count()>0) {
             qDebug() << "already existed: " << filepath << endl;
-            ++skippedNum;
+            ++mSkippedNum;
             continue;
         }
 
@@ -179,6 +198,8 @@ void MainWindow::addPictures(QStringList filelist)
         userData["date time"] = QVariant(dt);
         userData["file path"] = QVariant(filepath);
         item->setData(QVariant(userData), Qt::UserRole);
+        item->setData(QVariant(filepath), Qt::ToolTipRole);
+
 
 
         int rotate;
@@ -218,36 +239,45 @@ void MainWindow::addPictures(QStringList filelist)
         mModelMap[model]->appendRow(item);
         int lastrow = mModelMap[model]->rowCount()-1;
         mModelMap[model]->setItem(lastrow, 1, new QStandardItem (datetime));
+        mModelMap[model]->setItem(lastrow, 2, new QStandardItem (filepath));
 
         exif_data_unref(ed);
 
-        ++addedNum;
+        ++mAddedNum;
+        qDebug() << __FUNCTION__ << __LINE__ ;
     }
+    qDebug() << __FUNCTION__ << __LINE__ << mProgress ;
 
-    qDebug() << "model count:" << mModelMap.keys().count() << endl;
+    if(mProgress==mFileList.count()) {
+        qDebug() << "model count:" << mModelMap.keys().count() << endl;
 
-    for(int i=0; i<mModelMap.keys().count(); i++) {
-        qDebug() << "model " << i << ": " <<  mModelMap[mModelMap.keys()[i]]->rowCount() << endl;
-        mModelMap[mModelMap.keys()[i]]->sort(1);
-        if(ui->leftComboBox->findText(mModelMap.keys()[i])<0)
-            ui->leftComboBox->addItem(mModelMap.keys()[i]);
+        for(int i=0; i<mModelMap.keys().count(); i++) {
+            qDebug() << "model " << i << ": " <<  mModelMap[mModelMap.keys()[i]]->rowCount() << endl;
+            mModelMap[mModelMap.keys()[i]]->sort(1);
+            if(ui->leftComboBox->findText(mModelMap.keys()[i])<0)
+                ui->leftComboBox->addItem(mModelMap.keys()[i]);
+        }
+        qDebug() << "model end" << endl;
+        qDebug() << "1 model count:" << mModelMap.keys().count() << endl;
+        if(ui->leftComboBox->count()>0)
+            slotLeftChanged(0);
+        qDebug() << "2 model count:" << mModelMap.keys().count() << endl;
+
+        QString message;
+        if(mSkippedNum==0)
+            message = tr("%1 files added").arg(mAddedNum);
+        else
+            message = tr("%1 files added, %2 files skipped").arg(mAddedNum).arg(mSkippedNum);
+        qDebug() << message << endl;
+        qDebug() << "model count:" << mModelMap.keys().count() << endl;
+        this->statusBar()->showMessage(message);
+        setCursor(QCursor());
+        mPD->close();
+        delete mPD;
+        mPD = NULL;
     }
-    qDebug() << "model end" << endl;
-    qDebug() << "1 model count:" << mModelMap.keys().count() << endl;
-    if(ui->leftComboBox->count()>0)
-        slotLeftChanged(0);
-    qDebug() << "2 model count:" << mModelMap.keys().count() << endl;
-
-    QString message;
-    if(skippedNum==0)
-        message = tr("%1 files added").arg(addedNum);
     else
-        message = tr("%1 files added, %2 files skipped").arg(addedNum).arg(skippedNum);
-    qDebug() << message << endl;
-    qDebug() << "model count:" << mModelMap.keys().count() << endl;
-    this->statusBar()->showMessage(message);
-    
-    setCursor(QCursor());
+       mAddTimer->start(100);
 }
 
 void MainWindow::slotLeftChanged(int index) {
@@ -357,239 +387,6 @@ void MainWindow::dropEvent(QDropEvent *event) {
 
 
 
-extern "C" {
-static const int max_buf = 4096;
-
-struct my_jpeg_destination_mgr : public jpeg_destination_mgr {
-    // Nothing dynamic - cannot rely on destruction over longjump
-    QIODevice *device;
-    JOCTET buffer[max_buf];
-
-public:
-    my_jpeg_destination_mgr(QIODevice *);
-};
-static void qt_init_destination(j_compress_ptr)
-{
-}
-
-static boolean qt_empty_output_buffer(j_compress_ptr cinfo)
-{
-    my_jpeg_destination_mgr* dest = (my_jpeg_destination_mgr*)cinfo->dest;
-
-    int written = dest->device->write((char*)dest->buffer, max_buf);
-    if (written == -1)
-        (*cinfo->err->error_exit)((j_common_ptr)cinfo);
-
-    dest->next_output_byte = dest->buffer;
-    dest->free_in_buffer = max_buf;
-
-#if defined(Q_OS_UNIXWARE)
-    return B_TRUE;
-#else
-    return true;
-#endif
-}
-
-static void qt_term_destination(j_compress_ptr cinfo)
-{
-    my_jpeg_destination_mgr* dest = (my_jpeg_destination_mgr*)cinfo->dest;
-    qint64 n = max_buf - dest->free_in_buffer;
-
-    qint64 written = dest->device->write((char*)dest->buffer, n);
-    if (written == -1)
-        (*cinfo->err->error_exit)((j_common_ptr)cinfo);
-}
-
-
-inline my_jpeg_destination_mgr::my_jpeg_destination_mgr(QIODevice *device)
-{
-    jpeg_destination_mgr::init_destination = qt_init_destination;
-    jpeg_destination_mgr::empty_output_buffer = qt_empty_output_buffer;
-    jpeg_destination_mgr::term_destination = qt_term_destination;
-    this->device = device;
-    next_output_byte = buffer;
-    free_in_buffer = max_buf;
-}
-
-struct my_error_mgr : public jpeg_error_mgr {
-    jmp_buf setjmp_buffer;
-};
-static void my_error_exit (j_common_ptr cinfo)
-{
-    my_error_mgr* myerr = (my_error_mgr*) cinfo->err;
-    char buffer[JMSG_LENGTH_MAX];
-    (*cinfo->err->format_message)(cinfo, buffer);
-    qWarning("%s", buffer);
-    longjmp(myerr->setjmp_buffer, 1);
-}
-static bool write_jpeg_image(const QImage &sourceImage, QIODevice *device, uint8_t *exif_buf, uint8_t exif_buf_len)
-{
-    bool success = false;
-    const QImage image = sourceImage;
-    const QVector<QRgb> cmap = image.colorTable();
-
-    struct jpeg_compress_struct cinfo;
-    JSAMPROW row_pointer[1];
-    row_pointer[0] = 0;
-
-    struct my_jpeg_destination_mgr *iod_dest = new my_jpeg_destination_mgr(device);
-    struct my_error_mgr jerr;
-
-    cinfo.err = jpeg_std_error(&jerr);
-    jerr.error_exit = my_error_exit;
-
-    if (!setjmp(jerr.setjmp_buffer)) {
-        // WARNING:
-        // this if loop is inside a setjmp/longjmp branch
-        // do not create C++ temporaries here because the destructor may never be called
-        // if you allocate memory, make sure that you can free it (row_pointer[0])
-        jpeg_create_compress(&cinfo);
-
-        cinfo.dest = iod_dest;
-
-        cinfo.image_width = image.width();
-        cinfo.image_height = image.height();
-
-        bool gray=false;
-        switch (image.format()) {
-        case QImage::Format_Mono:
-        case QImage::Format_MonoLSB:
-        case QImage::Format_Indexed8:
-            gray = true;
-            for (int i = image.numColors(); gray && i--;) {
-                gray = gray & (qRed(cmap[i]) == qGreen(cmap[i]) &&
-                               qRed(cmap[i]) == qBlue(cmap[i]));
-            }
-            cinfo.input_components = gray ? 1 : 3;
-            cinfo.in_color_space = gray ? JCS_GRAYSCALE : JCS_RGB;
-            break;
-        default:
-            cinfo.input_components = 3;
-            cinfo.in_color_space = JCS_RGB;
-        }
-
-        jpeg_set_defaults(&cinfo);
-
-        qreal diffInch = qAbs(image.dotsPerMeterX()*2.54/100. - qRound(image.dotsPerMeterX()*2.54/100.))
-                         + qAbs(image.dotsPerMeterY()*2.54/100. - qRound(image.dotsPerMeterY()*2.54/100.));
-        qreal diffCm = (qAbs(image.dotsPerMeterX()/100. - qRound(image.dotsPerMeterX()/100.))
-                        + qAbs(image.dotsPerMeterY()/100. - qRound(image.dotsPerMeterY()/100.)))*2.54;
-        if (diffInch < diffCm) {
-            cinfo.density_unit = 1; // dots/inch
-            cinfo.X_density = qRound(image.dotsPerMeterX()*2.54/100.);
-            cinfo.Y_density = qRound(image.dotsPerMeterY()*2.54/100.);
-        } else {
-            cinfo.density_unit = 2; // dots/cm
-            cinfo.X_density = (image.dotsPerMeterX()+50) / 100;
-            cinfo.Y_density = (image.dotsPerMeterY()+50) / 100;
-        }
-
-        int quality = 100;
-#if defined(Q_OS_UNIXWARE)
-        jpeg_set_quality(&cinfo, quality, B_TRUE /* limit to baseline-JPEG values */);
-        jpeg_start_compress(&cinfo, B_TRUE);
-#else
-        jpeg_set_quality(&cinfo, quality, true /* limit to baseline-JPEG values */);
-        jpeg_start_compress(&cinfo, true);
-#endif
-
-        jpeg_write_marker (&cinfo, 0xe1, exif_buf, exif_buf_len);
-
-        row_pointer[0] = new uchar[cinfo.image_width*cinfo.input_components];
-        int w = cinfo.image_width;
-        while (cinfo.next_scanline < cinfo.image_height) {
-            uchar *row = row_pointer[0];
-            switch (image.format()) {
-            case QImage::Format_Mono:
-            case QImage::Format_MonoLSB:
-                if (gray) {
-                    const uchar* data = image.scanLine(cinfo.next_scanline);
-                    if (image.format() == QImage::Format_MonoLSB) {
-                        for (int i=0; i<w; i++) {
-                            bool bit = !!(*(data + (i >> 3)) & (1 << (i & 7)));
-                            row[i] = qRed(cmap[bit]);
-                        }
-                    } else {
-                        for (int i=0; i<w; i++) {
-                            bool bit = !!(*(data + (i >> 3)) & (1 << (7 -(i & 7))));
-                            row[i] = qRed(cmap[bit]);
-                        }
-                    }
-                } else {
-                    const uchar* data = image.scanLine(cinfo.next_scanline);
-                    if (image.format() == QImage::Format_MonoLSB) {
-                        for (int i=0; i<w; i++) {
-                            bool bit = !!(*(data + (i >> 3)) & (1 << (i & 7)));
-                            *row++ = qRed(cmap[bit]);
-                            *row++ = qGreen(cmap[bit]);
-                            *row++ = qBlue(cmap[bit]);
-                        }
-                    } else {
-                        for (int i=0; i<w; i++) {
-                            bool bit = !!(*(data + (i >> 3)) & (1 << (7 -(i & 7))));
-                            *row++ = qRed(cmap[bit]);
-                            *row++ = qGreen(cmap[bit]);
-                            *row++ = qBlue(cmap[bit]);
-                        }
-                    }
-                }
-                break;
-            case QImage::Format_Indexed8:
-                if (gray) {
-                    const uchar* pix = image.scanLine(cinfo.next_scanline);
-                    for (int i=0; i<w; i++) {
-                        *row = qRed(cmap[*pix]);
-                        ++row; ++pix;
-                    }
-                } else {
-                    const uchar* pix = image.scanLine(cinfo.next_scanline);
-                    for (int i=0; i<w; i++) {
-                        *row++ = qRed(cmap[*pix]);
-                        *row++ = qGreen(cmap[*pix]);
-                        *row++ = qBlue(cmap[*pix]);
-                        ++pix;
-                    }
-                }
-                break;
-            case QImage::Format_RGB888:
-                memcpy(row, image.scanLine(cinfo.next_scanline), w * 3);
-                break;
-            case QImage::Format_RGB32:
-            case QImage::Format_ARGB32:
-            case QImage::Format_ARGB32_Premultiplied: {
-                QRgb* rgb = (QRgb*)image.scanLine(cinfo.next_scanline);
-                for (int i=0; i<w; i++) {
-                    *row++ = qRed(*rgb);
-                    *row++ = qGreen(*rgb);
-                    *row++ = qBlue(*rgb);
-                    ++rgb;
-                }
-                break;
-            }
-            default:
-                qWarning("QJpegHandler: unable to write image of format %i",
-                         image.format());
-                break;
-            }
-            jpeg_write_scanlines(&cinfo, row_pointer, 1);
-        }
-
-        jpeg_finish_compress(&cinfo);
-        jpeg_destroy_compress(&cinfo);
-        success = true;
-    } else {
-        jpeg_destroy_compress(&cinfo);
-        success = false;
-    }
-
-    delete iod_dest;
-    delete [] row_pointer[0];
-    return success;
-}
-}
-
-
-
 void MainWindow::slotSync() {
     QStandardItemModel *model = mModelMap[ui->rightComboBox->currentText()];
     mPD = new QProgressDialog(this);
@@ -643,8 +440,6 @@ void MainWindow::slotSyncTimer() {
     f2.write(bin2);
     f2.close();
 
-
-
     userData["date time"] = QVariant(QDateTime::fromString(userData["after"].toString(), "yyyy:MM:dd HH:mm:ss"));
     userData["after"] = QVariant(userData["date time"].toDateTime().toString("yyyy:MM:dd HH:mm:ss"));
     userData["delta"] = QVariant("+ 00:00:00");
@@ -656,20 +451,14 @@ void MainWindow::slotSyncTimer() {
     exif_data_save_data (ed, &exif_buf, &exif_buf_len);
     qDebug() << "exif buf len: " << exif_buf_len << endl;
 
-    QImage image(filePath, "JPEG");
-    QFile f(filePath+".jpg");
-    f.open(QIODevice::WriteOnly);
-    write_jpeg_image(image, &f, exif_buf, exif_buf_len);
-    f.close();
-    QFile f2(filePath+".exif");
-    f2.open(QIODevice::WriteOnly);
-    f2.write((const char*)exif_buf, exif_buf_len);
-    f2.close();
+    modify_exif(fileName, exif_buf, exif_buf_len);
 
     free(exif_buf);
     exif_data_unref(ed);
     */
 
+    mPD->setWindowTitle(tr("Synchronize") + QString(" (%1/%2)").arg(mProgress+1).arg(model->rowCount()));
+    qDebug() << tr("Synchronize") + QString(" (%1/%2)").arg(mProgress+1).arg(model->rowCount());
     mPD->setLabelText(filePath);
     mPD->show();
     mPD->setValue(mProgress++);

@@ -210,7 +210,7 @@ void MainWindow::slotAddTimer() {
         else if(orient == "right - top")
             rotate = 90;
         else
-            rotate = 180;
+            rotate = 0;
         if(rotate==0 || rotate==180) {
             QPixmap pixmap;
             pixmap.loadFromData((const uchar*)ed->data, ed->size, "jpeg");

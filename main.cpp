@@ -2,8 +2,15 @@
 #include <QTranslator>
 #include <QLocale>
 #include <QDebug>
+#include <QFileInfo>
+#include <QDir>
 #include "mainwindow.h"
 #include "common.h"
+
+#ifdef Q_WS_MAC
+#include <Carbon/Carbon.h>
+#endif
+
 
 int main(int argc, char *argv[])
 {
@@ -12,8 +19,27 @@ int main(int argc, char *argv[])
     a.setApplicationVersion(VERSION);
     QString locale = QLocale::system().name();
     QTranslator translator;
+	
+#ifdef Q_WS_MAC
+	CFURLRef appUrlRef = CFBundleCopyBundleURL(CFBundleGetMainBundle());
+	CFStringRef macPath = CFURLCopyFileSystemPath(appUrlRef,
+												  kCFURLPOSIXPathStyle);
+	const char *pathPtr = CFStringGetCStringPtr(macPath,
+												CFStringGetSystemEncoding());
+	CFRelease(appUrlRef);
+	CFRelease(macPath);
+#endif
+	
+#ifdef Q_WS_MAC
+	QDir dir(pathPtr);
+	dir.cd("Contents");
+	dir.cd("Resources");
+	translator.load(QString("twobody_%1").arg(locale), dir.absolutePath());
+#else
     translator.load(QString("twobody_%1").arg(locale));
-    a.installTranslator(&translator);
+#endif
+	
+	a.installTranslator(&translator);
     MainWindow w;
     w.show();
     return a.exec();

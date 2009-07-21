@@ -160,6 +160,8 @@
     <property name="title">
      <string>&amp;Help</string>
     </property>
+    <addaction name="actionDonate"/>
+    <addaction name="separator"/>
     <addaction name="actionAbout_Twobody"/>
    </widget>
    <addaction name="menu_File"/>
@@ -218,6 +220,15 @@
    </property>
    <property name="text">
     <string>Clear</string>
+   </property>
+  </action>
+  <action name="actionDonate">
+   <property name="icon">
+    <iconset resource="twobody.qrc">
+     <normaloff>:/images/donate.png</normaloff>:/images/donate.png</iconset>
+   </property>
+   <property name="text">
+    <string>Make a donation</string>
    </property>
   </action>
  </widget>

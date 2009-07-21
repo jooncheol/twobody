@@ -30,6 +30,7 @@ private slots:
     void aboutTwobody();
     void addPictures();
     void clearPictures();
+    void slotDonation();
     void slotLeftChanged(int);
     void slotRightChanged(int);
     void slotPictureIndexChanged(const QModelIndex &);

@@ -14,6 +14,12 @@
 #include <libexif/exif-ifd.h>
 #include <libexif/exif-content.h>
 
+
+#if defined(Q_OS_WIN)
+#include <windows.h>
+#endif
+
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
@@ -41,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(mTimer, SIGNAL(timeout()), this, SLOT(slotSyncTimer()));
     connect(mAddTimer, SIGNAL(timeout()), this, SLOT(slotAddTimer()));
     connect(ui->actionAbout_Twobody, SIGNAL(activated()), this, SLOT(aboutTwobody()));
+    connect(ui->actionDonate, SIGNAL(activated()), this, SLOT(slotDonation()));
     connect(ui->action_Add_pictures, SIGNAL(activated()), this, SLOT(addPictures()));
     connect(ui->actionClear, SIGNAL(activated()), this, SLOT(clearPictures()));
     connect(ui->addPicturesButton, SIGNAL(clicked()), this, SLOT(addPictures()));
@@ -67,6 +74,34 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::slotDonation()
+{
+    QString url = "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=6940639";
+        //Windows
+#if defined(Q_OS_WIN)
+    ShellExecute(winId(), 0, (WCHAR*)url.utf16(), 0, 0, SW_SHOWNORMAL );
+
+    //MacOSX
+#elif defined(Q_OS_MACX)
+    QProcess p;
+    p.start( "/usr/bin/open", QStringList() << url );
+    p.waitForFinished();
+
+    //UNIX
+#else
+    //KDE
+    QProcess p;
+    p.start( "kfmclient", QStringList() << "openURL" << url );
+
+    //Gnome
+    if( !p.waitForFinished() )
+    {
+      p.start( "gnome-open", QStringList() << QString("\"%1\"").arg(url) );
+      p.waitForFinished();
+    }
+#endif
+
+}
 void MainWindow::aboutTwobody()
 {
     QMessageBox::about(this, tr("About %1 %2").arg(qApp->applicationName()).arg(qApp->applicationVersion()),
@@ -234,7 +269,7 @@ void MainWindow::slotAddTimer() {
             item->setIcon(pixmap);
         }
 
-        //exif_data_dump(ed);
+        exif_data_dump(ed);
 
         mModelMap[model]->appendRow(item);
         int lastrow = mModelMap[model]->rowCount()-1;

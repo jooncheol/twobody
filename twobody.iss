@@ -11,7 +11,7 @@ AppUpdatesURL=http://code.google.com/p/twobody
 DefaultDirName={pf}\Twobody\1.0
 DefaultGroupName=Twobody 1.0
 OutputDir=release
-OutputBaseFilename=twobody-setup
+OutputBaseFilename=twobody-setup-1.0
 Compression=lzma
 SolidCompression=yes
 UnInstallable=yes
@@ -29,7 +29,8 @@ Source: "release\libexif-12.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Qt\2009.02\qt\bin\QtCore4.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Qt\2009.02\qt\bin\QtGui4.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "twobody_ko_KR.qm"; DestDir: "{app}"; Flags: ignoreversion
-Source: "COPYING"; DestDir: "{app}"; Flags: ignoreversion
+Source: "COPYING.txt"; DestDir: "{app}"; Flags: ignoreversion
+
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
@@ -37,6 +38,7 @@ Source: "COPYING"; DestDir: "{app}"; Flags: ignoreversion
 Name: "{group}\Twobody"; Filename: "{app}\twobody.exe"; WorkingDir: "{app}"
 Name: "{userdesktop}\Twobody"; Filename: "{app}\twobody.exe"; Tasks: desktopicon; WorkingDir: "{app}"
 Name: "{group}\uninstall"; Filename: "{uninstallexe}"
+Name: "{group}\COPYING"; Filename: "{app}\COPYING.txt"
 
 [Run]
 Filename: "{app}\twobody.exe"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,Twobody}"; Flags: nowait postinstall skipifsilent

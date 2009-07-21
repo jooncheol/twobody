@@ -6,5 +6,6 @@
         <file>images/quit.png</file>
         <file>images/about.png</file>
         <file>images/clear.png</file>
+        <file>images/donate.png</file>
     </qresource>
 </RCC>

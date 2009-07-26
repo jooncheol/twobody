@@ -12,10 +12,16 @@ HEADERS += mainwindow.h \
     thumbdelegate.h \
     common.h
 FORMS += mainwindow.ui
-CONFIG += link_pkgconfig release static
+CONFIG += link_pkgconfig release
 PKGCONFIG += libexif
 RESOURCES += twobody.qrc
 #OTHER_FILES += twobody_ko_KR.ts
 TRANSLATIONS += twobody_ko_KR.ts
 RC_FILE = twobody.rc
 ICON = images/twobody.icns
+
+unix {
+	CONFIG += static
+	LIBS += /usr/lib/libexif.a 
+	PKGCONFIG -= libexif
+}

@@ -4,7 +4,7 @@
 #include <QDebug>
 #include <QMap>
 #include <QtGui>
-#include <Qtimer>
+#include <QTimer>
 #include "ui_mainwindow.h"
 #include "thumbdelegate.h"
 
@@ -89,15 +89,19 @@ void MainWindow::slotDonation()
 
     //UNIX
 #else
-    //KDE
     QProcess p;
-    p.start( "kfmclient", QStringList() << "openURL" << url );
-
-    //Gnome
-    if( !p.waitForFinished() )
-    {
-      p.start( "gnome-open", QStringList() << QString("\"%1\"").arg(url) );
-      p.waitForFinished();
+    if(QFile::exists("/usr/bin/gnome-open")) {
+        qDebug() << "gnome-open";
+        QProcess::startDetached("gnome-open", 
+              QStringList() << url );
+    } else if(QFile::exists("/usr/bin/kfmclient")) {
+        qDebug() << "kfmclient";
+        QProcess::startDetached("kfmclient", 
+              QStringList() << "openURL" << url );
+    } else if(QFile::exists("/usr/bin/firefox")) {
+        qDebug() << "firefox";
+        QProcess::startDetached("/usr/bin/firefox", 
+              QStringList() << url);
     }
 #endif
 
@@ -342,7 +346,7 @@ void MainWindow::slotRightChanged(int index) {
     ui->actionTime_synchronize->setEnabled(
         ui->leftListView->currentIndex().row()>=0 && ui->rightListView->currentIndex().row()>=0);
 }
-void MainWindow::slotPictureIndexChanged(const QModelIndex &mi) {
+void MainWindow::slotPictureIndexChanged(const QModelIndex &) {
     if(ui->leftListView->currentIndex().row()>=0 && ui->rightListView->currentIndex().row()>=0) {
         ui->syncButton->setEnabled(true);
         ui->actionTime_synchronize->setEnabled(true);
@@ -423,6 +427,11 @@ void MainWindow::dropEvent(QDropEvent *event) {
 
 
 void MainWindow::slotSync() {
+    if(QMessageBox::warning (this, tr("Warning"), 
+            tr("Do you want to start synchronization?"), 
+            QMessageBox::Ok|QMessageBox::Cancel,
+            QMessageBox::Ok)!=QMessageBox::Ok)
+        return;
     QStandardItemModel *model = mModelMap[ui->rightComboBox->currentText()];
     mPD = new QProgressDialog(this);
     connect(mPD, SIGNAL(canceled()), this, SLOT(slotSyncCanceled()));

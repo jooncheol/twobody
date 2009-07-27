@@ -428,7 +428,7 @@ void MainWindow::dropEvent(QDropEvent *event) {
 
 void MainWindow::slotSync() {
     if(QMessageBox::warning (this, tr("Warning"), 
-            tr("Do you want to start synchronization?"), 
+            tr("Do you want to start synchronize?"),
             QMessageBox::Ok|QMessageBox::Cancel,
             QMessageBox::Ok)!=QMessageBox::Ok)
         return;

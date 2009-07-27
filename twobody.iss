@@ -28,6 +28,7 @@ Source: "release\twobody.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "release\libexif-12.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Qt\2009.02\qt\bin\QtCore4.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Qt\2009.02\qt\bin\QtGui4.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\mingw\bin\mingwm10.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "twobody_ko_KR.qm"; DestDir: "{app}"; Flags: ignoreversion
 Source: "COPYING.txt"; DestDir: "{app}"; Flags: ignoreversion
 

@@ -31,6 +31,7 @@ private slots:
     void addPictures();
     void clearPictures();
     void slotDonation();
+    void slotHomepage();
     void slotLeftChanged(int);
     void slotRightChanged(int);
     void slotPictureIndexChanged(const QModelIndex &);
@@ -38,6 +39,8 @@ private slots:
     void slotSyncTimer();
     void slotSyncCanceled();
     void slotAddTimer();
+private:
+    void openURL(const QString &url);
 
 private:
     Ui::MainWindow *ui;

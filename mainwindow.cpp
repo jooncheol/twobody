@@ -48,6 +48,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(mAddTimer, SIGNAL(timeout()), this, SLOT(slotAddTimer()));
     connect(ui->actionAbout_Twobody, SIGNAL(activated()), this, SLOT(aboutTwobody()));
     connect(ui->actionDonate, SIGNAL(activated()), this, SLOT(slotDonation()));
+    connect(ui->actionHomepage, SIGNAL(activated()), this, SLOT(slotHomepage()));
     connect(ui->action_Add_pictures, SIGNAL(activated()), this, SLOT(addPictures()));
     connect(ui->actionClear, SIGNAL(activated()), this, SLOT(clearPictures()));
     connect(ui->addPicturesButton, SIGNAL(clicked()), this, SLOT(addPictures()));
@@ -73,10 +74,8 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
-
-void MainWindow::slotDonation()
+void MainWindow::openURL(const QString &url)
 {
-    QString url = "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=6940639";
         //Windows
 #if defined(Q_OS_WIN)
     ShellExecute(winId(), 0, (WCHAR*)url.utf16(), 0, 0, SW_SHOWNORMAL );
@@ -92,19 +91,28 @@ void MainWindow::slotDonation()
     QProcess p;
     if(QFile::exists("/usr/bin/gnome-open")) {
         qDebug() << "gnome-open";
-        QProcess::startDetached("gnome-open", 
+        QProcess::startDetached("gnome-open",
               QStringList() << url );
     } else if(QFile::exists("/usr/bin/kfmclient")) {
         qDebug() << "kfmclient";
-        QProcess::startDetached("kfmclient", 
+        QProcess::startDetached("kfmclient",
               QStringList() << "openURL" << url );
     } else if(QFile::exists("/usr/bin/firefox")) {
         qDebug() << "firefox";
-        QProcess::startDetached("/usr/bin/firefox", 
+        QProcess::startDetached("/usr/bin/firefox",
               QStringList() << url);
     }
 #endif
 
+}
+void MainWindow::slotHomepage()
+{
+    openURL("http://code.google.com/p/twobody");
+}
+
+void MainWindow::slotDonation()
+{
+    openURL("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=6940639");
 }
 void MainWindow::aboutTwobody()
 {
@@ -266,6 +274,7 @@ void MainWindow::slotAddTimer() {
                 pixmap_.fill(Qt::black);
                 QPainter p(&pixmap_);
                 p.drawPixmap((160-pixmap.width())/2, (120-pixmap.height())/2, pixmap);
+                p.end();
                 pixmap = pixmap_;
             }
             if(rotate==0)
@@ -292,6 +301,7 @@ void MainWindow::slotAddTimer() {
             pixmap.fill(Qt::black);
             QPainter p(&pixmap);
             p.drawImage((160-timage.width())/2, (120-timage.height())/2, timage);
+            p.end();
             item->setIcon(pixmap);
         }
 

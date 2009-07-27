@@ -3,15 +3,15 @@
 
 [Setup]
 AppName=Twobody
-AppVerName=Twobody 1.0
+AppVerName=Twobody 1.1
 AppPublisher=Jooncheol Park
 AppPublisherURL=http://exman.pe.kr
 AppSupportURL=http://code.google.com/p/twobody
 AppUpdatesURL=http://code.google.com/p/twobody
-DefaultDirName={pf}\Twobody\1.0
-DefaultGroupName=Twobody 1.0
+DefaultDirName={pf}\Twobody\1.1
+DefaultGroupName=Twobody 1.1
 OutputDir=release
-OutputBaseFilename=twobody-setup-1.0
+OutputBaseFilename=twobody-setup-1.1
 Compression=lzma
 SolidCompression=yes
 UnInstallable=yes

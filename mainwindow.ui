@@ -160,9 +160,11 @@
     <property name="title">
      <string>&amp;Help</string>
     </property>
+    <addaction name="actionHomepage"/>
     <addaction name="actionDonate"/>
     <addaction name="separator"/>
     <addaction name="actionAbout_Twobody"/>
+    <addaction name="separator"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Help"/>
@@ -229,6 +231,11 @@
    </property>
    <property name="text">
     <string>Make a donation</string>
+   </property>
+  </action>
+  <action name="actionHomepage">
+   <property name="text">
+    <string>Homepage</string>
    </property>
   </action>
  </widget>

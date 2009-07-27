@@ -6,11 +6,13 @@
 #include <QDir>
 #include "mainwindow.h"
 #include "common.h"
+#include <unistd.h>
+#include <stdlib.h>
+#include <QtPlugin>
 
 #ifdef Q_WS_MAC
 #include <Carbon/Carbon.h>
 #endif
-
 
 int main(int argc, char *argv[])
 {
@@ -19,7 +21,17 @@ int main(int argc, char *argv[])
     a.setApplicationVersion(VERSION);
     QString locale = QLocale::system().name();
     QTranslator translator;
-	
+
+    char cwd[256];
+    getcwd(cwd, 256);
+    qDebug() << "cwd: " << cwd;
+
+    QStringList lp = a.libraryPaths();
+    lp << QString(cwd);
+    a.setLibraryPaths(lp);
+
+
+
 #ifdef Q_WS_MAC
 	CFURLRef appUrlRef = CFBundleCopyBundleURL(CFBundleGetMainBundle());
 	CFStringRef macPath = CFURLCopyFileSystemPath(appUrlRef,

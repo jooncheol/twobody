@@ -250,9 +250,24 @@ void MainWindow::slotAddTimer() {
             rotate = 90;
         else
             rotate = 0;
+
+        qDebug() << "thumb size " << ed->size << " rotate: " << rotate;
+
         if(rotate==0 || rotate==180) {
             QPixmap pixmap;
-            pixmap.loadFromData((const uchar*)ed->data, ed->size, "jpeg");
+            if(ed->size>0)
+                pixmap.loadFromData((const uchar*)ed->data, ed->size, "jpeg");
+            else {
+                QImage img (filepath);
+                pixmap = QPixmap::fromImage(img.scaled(160, 120, Qt::KeepAspectRatio));
+            }
+            if(pixmap.width()!=160 || pixmap.height()!=120) {
+                QPixmap pixmap_(160, 120);
+                pixmap_.fill(Qt::black);
+                QPainter p(&pixmap_);
+                p.drawPixmap((160-pixmap.width())/2, (120-pixmap.height())/2, pixmap);
+                pixmap = pixmap_;
+            }
             if(rotate==0)
                 item->setIcon(pixmap);
             else {
@@ -262,14 +277,21 @@ void MainWindow::slotAddTimer() {
             }
         } else {
             QImage image;
-            image.loadFromData((const uchar*)ed->data, ed->size, "jpeg");
+            if(ed->size>0) {
+                QImage img;
+                img.loadFromData((const uchar*)ed->data, ed->size, "jpeg");
+                image = img.scaled(160, 120, Qt::KeepAspectRatio);
+            } else {
+                QImage img (filepath);
+                image = img.scaled(160, 120, Qt::KeepAspectRatio);
+            }
             QTransform tf = QTransform::fromScale(0.75, 0.75);
             tf.rotate(rotate);
             QImage timage = image.transformed(tf);
             QPixmap pixmap(160, 120);
             pixmap.fill(Qt::black);
             QPainter p(&pixmap);
-            p.drawImage(35, 0, timage);
+            p.drawImage((160-timage.width())/2, (120-timage.height())/2, timage);
             item->setIcon(pixmap);
         }
 

@@ -20,8 +20,3 @@ TRANSLATIONS += twobody_ko_KR.ts
 RC_FILE = twobody.rc
 ICON = images/twobody.icns
 
-
-unix {
-	LIBS += /usr/lib/libexif.a 
-	PKGCONFIG -= libexif
-}

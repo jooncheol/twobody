@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     QString locale = QLocale::system().name();
     QTranslator translator;
 
-#ifdef Q_WS_WIN
+#ifdef Q_WS_WIN || Q_WS_X11
     char cwd[256];
     getcwd(cwd, 256);
     qDebug() << "cwd: " << cwd;

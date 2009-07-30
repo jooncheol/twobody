@@ -13,7 +13,7 @@ HEADERS += mainwindow.h \
     common.h
 FORMS += mainwindow.ui
 CONFIG += link_pkgconfig release
-PKGCONFIG += libexif
+#PKGCONFIG += libexif
 RESOURCES += twobody.qrc
 #OTHER_FILES += twobody_ko_KR.ts
 TRANSLATIONS += twobody_ko_KR.ts

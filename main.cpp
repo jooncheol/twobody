@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     QString locale = QLocale::system().name();
     QTranslator translator;
 
-#ifdef Q_WS_WIN || Q_WS_X11
+#ifdef Q_WS_WIN
     char cwd[256];
     getcwd(cwd, 256);
     qDebug() << "cwd: " << cwd;
@@ -32,6 +32,9 @@ int main(int argc, char *argv[])
     a.setLibraryPaths(lp);
 #endif
 
+#ifdef Q_WS_X11
+    Q_IMPORT_PLUGIN(qjpeg)
+#endif
 
 
 #ifdef Q_WS_MAC
